@@ -80,7 +80,6 @@ public class BFXWebSocket extends AbstractActor {
         reader.nextDouble();
         Double dPrice = reader.nextDouble();
         BigDecimal price = BigDecimal.valueOf(dPrice);
-        log.info("new price: " + price);
         server.tell(new PriceUpdate(price), getSelf());
       } else {
         throw new IOException();

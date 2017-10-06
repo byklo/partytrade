@@ -44,21 +44,21 @@ public class Kernel extends AbstractActor {
 
   private void consumePriceUpdate(PriceUpdate update) {
     this.currentPrice = update.price;
-    log.info("PRICE: " + this.currentPrice);
   }
 
   @Override
   public Receive createReceive() {
     return receiveBuilder()
-    	.match(PriceUpdate.class, update -> {
+      .match(PriceUpdate.class, update -> {
         consumePriceUpdate(update);
+        log.info("[TICK] " + update.price);
     	})
       .match(PriceRequest.class, request -> {
         getSender().tell(currentPrice, null);
       })
       .match(Order.class, order -> {
-        log.info("Received an order: " + order.type + "(" + order.units + ") @ " + order.price + " for account " + order.accountId);
         getSender().tell(true, null);
+        log.info("Received an order: " + order.type + "(" + order.units + ") @ " + order.price + " for account " + order.accountId);
       })
     	.build();
   }
