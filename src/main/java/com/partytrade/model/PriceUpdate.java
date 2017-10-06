@@ -3,7 +3,7 @@ package com.partytrade.model;
 import java.math.BigDecimal;
 
 
-public class PriceUpdate {
+public final class PriceUpdate {
 	public final BigDecimal price;
 
 	public PriceUpdate(BigDecimal _price) {
