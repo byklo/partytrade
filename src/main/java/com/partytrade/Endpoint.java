@@ -4,13 +4,21 @@ import akka.actor.ActorSystem;
 import akka.actor.ActorRef;
 import akka.http.javadsl.server.HttpApp;
 import akka.http.javadsl.server.Route;
+import akka.http.javadsl.server.Route;
 import akka.pattern.Patterns;
 import static akka.http.javadsl.unmarshalling.Unmarshaller.entityToString;
+import akka.http.javadsl.server.directives.WebSocketDirectives;
+import akka.stream.javadsl.Flow;
+import akka.stream.javadsl.Source;
+import akka.http.javadsl.model.ws.Message;
+import akka.http.javadsl.model.ws.TextMessage;
+import akka.util.Timeout;
+import akka.NotUsed;
+import akka.japi.JavaPartialFunction;
 
 import scala.concurrent.Future;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
-import akka.util.Timeout;
 
 import com.partytrade.Kernel.PriceRequest;
 import com.partytrade.model.Order;
@@ -23,6 +31,10 @@ import java.math.BigDecimal;
 ENDPOINT
 ========
 the http server. handles requests from front-end.
+- when you connect to localhost:8080/ws
+  - you should be auto subscribed to a price feed
+  - you should be able to send messages to the server
+    - execute trade
 */
 
 
@@ -30,10 +42,41 @@ public class Endpoint {
   final ActorRef kernel;
   final HttpServer server;
 
+  public static Flow<Message, Message, NotUsed> websocketServer() {
+    return Flow.<Message>create().collect(new JavaPartialFunction<Message, Message>() {
+      @Override
+      public Message apply(Message msg, boolean isCheck) throws Exception {
+        if (isCheck) {
+          if (msg.isText()) {
+            return null;
+          } else {
+            System.out.println("websocketServer threw!");
+            throw noMatch();
+          }
+        } else {
+          return handleWebSocketMessage(msg.asTextMessage());
+        }
+      }
+    });
+  }
+
+  public static TextMessage handleWebSocketMessage(TextMessage msg) {
+    if (msg.isStrict()) // optimization that directly creates a simple response...
+    {
+      return TextMessage.create("Hello " + msg.getStrictText());
+    } else // ... this would suffice to handle all text messages in a streaming fashion
+    {
+      return TextMessage.create(Source.single("Hello ").concat(msg.getStreamedText()));
+    }
+  }
+
   class HttpServer extends HttpApp {
     @Override
     protected Route routes() {
       return route(
+        path("ws", () ->
+          handleWebSocketMessages(websocketServer())
+        ),
         post( () ->
           path("trade", () ->
             // curl --data "{'type': 'LIMIT', 'units': '-50', 'accountId': '32158315', 'price': '4324'}" localhost:8080/trade
