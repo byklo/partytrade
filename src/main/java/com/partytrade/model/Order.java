@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 {
 	"type": "MARKET" <OR> "LIMIT",
 	"units": +/- dddd.dd,
-	"price": dddd.dd <OR> 0
+	"price": dddd.dd <OR> 0 (in case of MARKET order)
 	"accountId": <account-id>
 }
 */

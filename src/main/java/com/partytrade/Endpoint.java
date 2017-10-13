@@ -37,13 +37,14 @@ public class Endpoint {
         post( () ->
           path("trade", () ->
             // curl --data "{'type': 'LIMIT', 'units': '-50', 'accountId': '32158315', 'price': '4324'}" localhost:8080/trade
+            // curl --data "{'type': 'MARKET', 'units': '2', 'accountId': '32158315', 'price': '0'}" localhost:8080/trade
             entity(entityToString(), body -> {
               Gson gson = new Gson();
               Order order;
               try {
                 order = gson.fromJson(body, Order.class);
               } catch (Exception e) {
-                return complete("Failed to parse JSON");
+                return complete("Failed to parse JSON order");
               }
               Timeout timeout = new Timeout(Duration.create(5, "seconds"));
               Future<Object> fSuccess = Patterns.ask(kernel, order, timeout);
@@ -51,7 +52,7 @@ public class Endpoint {
               try {
                 success = (boolean) Await.result(fSuccess, timeout.duration());
               } catch (Exception e) {
-                return complete("Failed to prcess order");
+                return complete("Failed to process order");
               }
               return complete(success ? "SUCCESS" : "REJECTED");
             })

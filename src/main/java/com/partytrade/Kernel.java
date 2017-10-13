@@ -46,6 +46,23 @@ public class Kernel extends AbstractActor {
     this.currentPrice = update.price;
   }
 
+  private boolean consumeOrder(Order order) {
+    boolean response = true;
+    switch (order.type) {
+      case "MARKET":
+        log.info("Executing MARKET order for (" + order.units + ") @ " + currentPrice + " for account " + order.accountId);
+        break;
+      case "LIMIT":
+        log.info("Placing LIMIT order for (" + order.units + ") @ " + order.price + " for account " + order.accountId);
+        break;
+      default:
+        log.info("INVALID ORDER TYPE RECEIVED: " + order.type);
+        response = false;
+        break;
+    }
+    return response;
+  }
+
   @Override
   public Receive createReceive() {
     return receiveBuilder()
@@ -57,8 +74,13 @@ public class Kernel extends AbstractActor {
         getSender().tell(currentPrice, null);
       })
       .match(Order.class, order -> {
-        getSender().tell(true, null);
+        // handle the order!
+        // commit to db or whatever
+        // should probably query the user's balance, and also most up to date price
+        // if its a market order, allow slippage LOL
         log.info("Received an order: " + order.type + "(" + order.units + ") @ " + order.price + " for account " + order.accountId);
+        boolean orderResponse = consumeOrder(order);
+        getSender().tell(orderResponse, null);
       })
     	.build();
   }
